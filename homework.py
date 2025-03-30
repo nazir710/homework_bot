@@ -78,17 +78,15 @@ def get_api_answer(timestamp):
             headers=HEADERS,
             params={'from_date': timestamp}
         )
-        if not homework.status_code == HTTPStatus.OK:
-            message = (
-                f'API вернул статус, отличный от 200: {homework.status_code}'
-            )
-            logger.critical(message)
-            raise StatusError(message)
-        else:
-            return homework.json()
-    except requests.RequestException:
+    except Exception:
         message = f'API вернул статус, отличный от 200: {homework.status_code}'
         raise StatusError(message)
+    if not homework.status_code == HTTPStatus.OK:
+        message = (
+            f'API вернул статус, отличный от 200: {homework.status_code}'
+        )
+        raise StatusError(message)
+    return homework.json()
 
 
 def check_response(response):
@@ -148,7 +146,7 @@ def main():
     check_tokens()
     bot = TeleBot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-    error_messages = []
+    error_message = ''
     while True:
         try:
             response = get_api_answer(timestamp)
@@ -161,11 +159,10 @@ def main():
                 check_send_message_status(bot, parse_status_message)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            error_messages.append(message)
             logger.error(message)
-            if (len(error_messages) == 1 or len(error_messages) > 1
-                    and not error_messages[-1] == error_messages[-2]):
+            if not error_message == message:
                 check_send_message_status(bot, message)
+                error_message = message
         time.sleep(RETRY_PERIOD)
 
 
