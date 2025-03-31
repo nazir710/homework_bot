@@ -78,9 +78,8 @@ def get_api_answer(timestamp):
             headers=HEADERS,
             params={'from_date': timestamp}
         )
-    except Exception:
-        message = f'API вернул статус, отличный от 200: {homework.status_code}'
-        raise StatusError(message)
+    except requests.RequestException as error:
+        raise StatusError(error)
     if not homework.status_code == HTTPStatus.OK:
         message = (
             f'API вернул статус, отличный от 200: {homework.status_code}'
@@ -160,7 +159,7 @@ def main():
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
-            if not error_message == message:
+            if error_message != message:
                 check_send_message_status(bot, message)
                 error_message = message
         time.sleep(RETRY_PERIOD)
